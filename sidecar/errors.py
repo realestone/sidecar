@@ -13,6 +13,8 @@ class ErrorCode(Enum):
     GIT_ERROR = "git_error"
     ANALYZER_ERROR = "analyzer_error"
     BRIEFING_ERROR = "briefing_error"
+    HOOK_ERROR = "hook_error"
+    INSTALLER_ERROR = "installer_error"
 
 class SidecarError(Exception):
     def __init__(self, code: ErrorCode, message: str):
@@ -72,3 +74,11 @@ class SidecarError(Exception):
     @classmethod
     def briefing_error(cls, detail: str) -> "SidecarError":
         return cls(ErrorCode.BRIEFING_ERROR, f"Briefing error: {detail}")
+
+    @classmethod
+    def hook_error(cls, detail: str) -> "SidecarError":
+        return cls(ErrorCode.HOOK_ERROR, f"Hook error: {detail}")
+
+    @classmethod
+    def installer_error(cls, detail: str) -> "SidecarError":
+        return cls(ErrorCode.INSTALLER_ERROR, f"Installer error: {detail}")

@@ -15,6 +15,7 @@ load_dotenv()
 
 MODEL = "claude-haiku-4-5-20251001"
 MAX_RETRIES = 2
+MAX_INPUT_CHARS = 150000  # ~37,500 tokens, well under the 50k rate limit
 
 ANALYSIS_PROMPT = """You are analyzing a developer's coding session with an AI assistant.
 You are given TWO sources of truth:
@@ -98,6 +99,21 @@ def analyze_session(
         f"## CODEBASE DIFF\n\n{diff_text}\n\n## CONVERSATION\n\n{conversation_text}"
     )
 
+    # Truncate if too long to avoid rate limits
+    if len(user_message) > MAX_INPUT_CHARS:
+        # Prioritize diff over conversation, truncate conversation
+        available_for_conv = MAX_INPUT_CHARS - len(diff_text) - 100  # 100 for headers
+        if available_for_conv > 10000:
+            conversation_text = conversation_text[:available_for_conv] + "\n\n[...conversation truncated...]"
+        else:
+            # Both need truncation
+            diff_text = diff_text[: MAX_INPUT_CHARS // 2] + "\n\n[...diff truncated...]"
+            conversation_text = conversation_text[: MAX_INPUT_CHARS // 2] + "\n\n[...conversation truncated...]"
+
+        user_message = (
+            f"## CODEBASE DIFF\n\n{diff_text}\n\n## CONVERSATION\n\n{conversation_text}"
+        )
+
     client = anthropic.Anthropic(api_key=api_key)
 
     last_error = None
@@ -126,6 +142,10 @@ def analyze_session(
         except (json.JSONDecodeError, KeyError, IndexError) as e:
             last_error = e
             continue
+        except anthropic.RateLimitError as e:
+            raise SidecarError.analyzer_error(
+                "Rate limit exceeded. Wait a minute and try again, or try a smaller session."
+            ) from e
         except anthropic.APIError as e:
             raise SidecarError.analyzer_error(f"API error: {e}") from e
 
