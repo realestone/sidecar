@@ -1,9 +1,20 @@
 [project]
 name = "sidecar"
 version = "0.2.0"
-description = "Add your description here"
+description = "MCP server and CLI that analyzes Claude Code sessions to generate structured development briefings — capturing what got built, architectural decisions, patterns used, and potential issues."
 readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+keywords = ["claude", "mcp", "ai", "developer-tools", "session-analysis"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = [
     "anthropic>=0.40",
     "click>=8.0",
@@ -12,6 +23,9 @@ dependencies = [
     "python-dotenv>=1.0",
     "rich>=13.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/realestone/sidecar"
 
 [project.scripts]
 sidecar = "sidecar.server:main"
