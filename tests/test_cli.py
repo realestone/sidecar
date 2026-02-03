@@ -88,6 +88,36 @@ class TestAnalyzeCommand:
         assert result.exit_code == 0
         mock.assert_called_once_with(session_id="test-id", project_path=None)
 
+    def test_latest_reanalyzes_most_recent_briefing(self):
+        runner = CliRunner()
+        briefings = [
+            {"session_id": "newest-123", "session_summary": "Newest", "created_at": "2026-01-02T00:00:00Z"},
+            {"session_id": "older-456", "session_summary": "Older", "created_at": "2026-01-01T00:00:00Z"},
+        ]
+        with patch("sidecar.cli.list_briefings", return_value=briefings):
+            with patch("sidecar.cli.run_pipeline", return_value=_sample_briefing()) as mock:
+                result = runner.invoke(cli, ["analyze", "--latest"])
+        assert result.exit_code == 0
+        mock.assert_called_once_with(session_id="newest-123", project_path=None)
+
+    def test_latest_no_briefings(self):
+        runner = CliRunner()
+        with patch("sidecar.cli.list_briefings", return_value=[]):
+            result = runner.invoke(cli, ["analyze", "--latest"])
+        assert result.exit_code == 0
+        assert "No briefings" in result.output
+
+    def test_session_id_takes_priority_over_latest(self):
+        runner = CliRunner()
+        briefings = [
+            {"session_id": "newest-123", "session_summary": "Newest", "created_at": "2026-01-02T00:00:00Z"},
+        ]
+        with patch("sidecar.cli.list_briefings", return_value=briefings):
+            with patch("sidecar.cli.run_pipeline", return_value=_sample_briefing()) as mock:
+                result = runner.invoke(cli, ["analyze", "-s", "custom-id", "--latest"])
+        assert result.exit_code == 0
+        mock.assert_called_once_with(session_id="custom-id", project_path=None)
+
 
 class TestSessionsCommand:
     def test_lists_sessions(self):
@@ -130,6 +160,36 @@ class TestBriefingCommand:
             result = runner.invoke(cli, ["briefing"])
         assert result.exit_code == 0
         assert "Session one" in result.output
+
+    def test_latest_shows_most_recent(self):
+        runner = CliRunner()
+        briefings = [
+            {"session_id": "newest-123", "session_summary": "Newest", "created_at": "2026-01-02T00:00:00Z"},
+            {"session_id": "older-456", "session_summary": "Older", "created_at": "2026-01-01T00:00:00Z"},
+        ]
+        with patch("sidecar.cli.list_briefings", return_value=briefings):
+            with patch("sidecar.cli.load_briefing", return_value=_sample_briefing()) as mock_load:
+                result = runner.invoke(cli, ["briefing", "--latest"])
+        assert result.exit_code == 0
+        mock_load.assert_called_once_with("newest-123")
+
+    def test_latest_no_briefings(self):
+        runner = CliRunner()
+        with patch("sidecar.cli.list_briefings", return_value=[]):
+            result = runner.invoke(cli, ["briefing", "--latest"])
+        assert result.exit_code == 0
+        assert "No briefings" in result.output
+
+    def test_session_id_takes_priority_over_latest(self):
+        runner = CliRunner()
+        briefings = [
+            {"session_id": "newest-123", "session_summary": "Newest", "created_at": "2026-01-02T00:00:00Z"},
+        ]
+        with patch("sidecar.cli.list_briefings", return_value=briefings):
+            with patch("sidecar.cli.load_briefing", return_value=_sample_briefing()) as mock_load:
+                result = runner.invoke(cli, ["briefing", "-s", "abc-123", "--latest"])
+        assert result.exit_code == 0
+        mock_load.assert_called_once_with("abc-123")
 
 
 class TestStatusCommand:

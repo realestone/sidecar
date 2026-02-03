@@ -118,6 +118,7 @@ def cli():
 
 @cli.command()
 @click.option("--session-id", "-s", default=None, help="Session ID to analyze")
+@click.option("--latest", "-l", is_flag=True, help="Re-analyze session from most recent briefing")
 @click.option("--project", "-p", default=None, help="Project path")
 @click.option(
     "--output",
@@ -133,6 +134,7 @@ def cli():
 @click.option("--notify", is_flag=True, help="Send desktop notification on completion")
 def analyze(
     session_id: str | None,
+    latest: bool,
     project: str | None,
     output: str,
     background: bool,
@@ -140,6 +142,14 @@ def analyze(
     notify: bool,
 ):
     """Analyze a Claude Code session and generate a briefing."""
+    # Priority: --session-id > --latest > default (latest session)
+    if not session_id and latest:
+        briefings = list_briefings()
+        if not briefings:
+            console.print("[yellow]No briefings generated yet.[/yellow]")
+            return
+        session_id = briefings[0]["session_id"]
+
     if background:
         _run_background_analysis(session_id, project, snapshot, notify)
     else:
@@ -331,12 +341,21 @@ def sessions(project: str | None):
 
 @cli.command()
 @click.option("--session-id", "-s", default=None, help="Session ID")
+@click.option("--latest", "-l", is_flag=True, help="Show the most recent briefing")
 @click.option("--detail", is_flag=True, help="Show file details and key code")
 @click.option(
     "--full", is_flag=True, help="Show everything including patterns and concepts"
 )
-def briefing(session_id: str | None, detail: bool, full: bool):
+def briefing(session_id: str | None, latest: bool, detail: bool, full: bool):
     """View a previously generated briefing."""
+    # Priority: --session-id > --latest > list all briefings
+    if not session_id and latest:
+        briefings = list_briefings()
+        if not briefings:
+            console.print("[yellow]No briefings generated yet.[/yellow]")
+            return
+        session_id = briefings[0]["session_id"]
+
     if session_id:
         b = load_briefing(session_id)
         if not b:
