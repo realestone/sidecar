@@ -1,0 +1,30 @@
+[project]
+name = "sidecar"
+version = "0.2.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.40",
+    "click>=8.0",
+    "jsonschema>=4.20",
+    "mcp>=1.0",
+    "python-dotenv>=1.0",
+    "rich>=13.0",
+]
+
+[project.scripts]
+sidecar = "sidecar.server:main"
+sidecar-cli = "sidecar.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
